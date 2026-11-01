@@ -1,0 +1,97 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+}
+
+/* Heartbeat pulse animation for accounts due TODAY */
+@keyframes latido {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.75);
+  }
+  70% {
+    transform: scale(1.22);
+    box-shadow: 0 0 0 14px rgba(239, 68, 68, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* Heartbeat pulse animation for OVERDUE accounts */
+@keyframes latido-vencido {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.75);
+  }
+  70% {
+    transform: scale(1.18);
+    box-shadow: 0 0 0 12px rgba(245, 158, 11, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.es-hoy {
+  animation: latido 1.4s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  border-color: #ef4444 !important;
+  z-index: 1000 !important;
+}
+
+.es-vencido {
+  animation: latido-vencido 1.6s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  border-color: #f59e0b !important;
+  z-index: 999 !important;
+}
+
+.custom-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Custom dark scrollbar for mobile lists */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+/* Leaflet dark tweaks */
+.leaflet-container {
+  background-color: #0b1120 !important;
+  font-family: inherit;
+}
+.leaflet-bar a {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+}
+.leaflet-bar a:hover {
+  background-color: #334155 !important;
+}
+.leaflet-control-layers {
+  background: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+}

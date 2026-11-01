@@ -1,0 +1,6 @@
+{
+  "name": "PABS Pro - Gestor de Rutas y Cobranza",
+  "description": "Aplicación móvil para gestión de rutas, cobranza en campo, GPS, mapa interactivo y cartera de afiliados PABS.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
