@@ -26,6 +26,10 @@ import {
   calcularProximoPagoDinamico,
   obtenerRangoSemanaOperativa,
   enviarBalizaServidor,
+  enviarApiWhaConBaliza,
+  obtenerMensajeWADinamico,
+  obtenerMensajeWA_PagoHoy,
+  obtenerMensajeProntoPaso,
 } from '../utils/pabsLogic';
 
 interface ClientBottomSheetProps {
@@ -262,45 +266,64 @@ export const ClientBottomSheet: React.FC<ClientBottomSheetProps> = ({
 
         {/* Content scrollable area */}
         <div className="overflow-y-auto px-4 py-3 space-y-3 flex-1 text-sm">
-          {/* Client Name with Link to Web Profile */}
-          <div className="text-center">
-            <button
-              onClick={() =>
-                onOpenWebVisor(
-                  `https://webrigo.devlara.us.ci/afiliado-${datos.idAfiliado}`,
-                  `AFILIADO: ${datos.nombre}`
-                )
-              }
-              className="text-lg sm:text-xl font-black text-white hover:text-indigo-300 transition text-center tracking-tight inline-flex items-center gap-1.5 leading-snug justify-center"
-            >
-              <span>{datos.nombre}</span>
-              <ExternalLink className="w-4 h-4 text-indigo-400 shrink-0" />
-            </button>
+          {/* Client Name with Link to Web Profile (afiliado-${idAfiliado}) */}
+          <div className="text-center space-y-1">
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={() => {
+                  const urlAfi = `https://webrigo.devlara.us.ci/afiliado-${datos.idAfiliado}`;
+                  onOpenWebVisor(urlAfi, `AFILIADO: ${datos.nombre}`);
+                }}
+                className="text-lg sm:text-xl font-black text-white hover:text-indigo-300 transition text-center tracking-tight underline decoration-indigo-400/50 hover:decoration-indigo-300 active:scale-95"
+                title="Ver ficha web del afiliado"
+              >
+                {datos.nombre || 'SIN NOMBRE'}
+              </button>
+              <button
+                onClick={e => {
+                  e.stopPropagation();
+                  window.open(`https://webrigo.devlara.us.ci/afiliado-${datos.idAfiliado}`, '_blank');
+                }}
+                className="p-1 rounded-lg bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 transition active:scale-90"
+                title="Abrir ficha en pestaña nueva"
+              >
+                <ExternalLink className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-[10px] text-indigo-400/90 font-medium tracking-wide">
+              🌐 Toca el nombre para abrir ficha oficial en PABS Web
+            </p>
           </div>
 
           {/* Top 3 Badges */}
           <div className="grid grid-cols-3 gap-2">
-            {/* 1. Payment status */}
+            {/* 1. Payment status (Dispatches via api_wha baliza) */}
             <div className="flex">
               {isHoy ? (
-                <a
-                  href={linkWA_Hoy}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full py-2 px-1 text-center font-extrabold text-[11px] rounded-xl bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-lg shadow-red-950/40 es-hoy flex items-center justify-center gap-1 leading-tight"
+                <button
+                  onClick={() => {
+                    const msg = obtenerMensajeWA_PagoHoy(cliente);
+                    enviarApiWhaConBaliza(cliente, msg);
+                    onShowToast(`💬 Mensaje de pago de hoy enviado a ${datos.nombre} vía api_wha`, 'success');
+                  }}
+                  className="w-full py-2 px-1 text-center font-extrabold text-[11px] rounded-xl bg-gradient-to-r from-red-600 to-rose-700 text-white shadow-lg shadow-red-950/40 es-hoy flex items-center justify-center gap-1 leading-tight active:scale-95 transition"
+                  title="Enviar aviso de pago de hoy vía servidor api_wha"
                 >
                   🔥 HOY PAGO
-                </a>
+                </button>
               ) : isVencido ? (
-                <a
-                  href={linkWA_Dinamico}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full py-2 px-1 text-center font-extrabold text-[11px] rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md flex items-center justify-center gap-1 leading-tight"
+                <button
+                  onClick={() => {
+                    const msg = obtenerMensajeWADinamico(cliente);
+                    enviarApiWhaConBaliza(cliente, msg);
+                    onShowToast(`💬 Aviso de atraso enviado a ${datos.nombre} vía api_wha`, 'success');
+                  }}
+                  className="w-full py-2 px-1 text-center font-extrabold text-[11px] rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 text-white shadow-md flex items-center justify-center gap-1 leading-tight active:scale-95 transition"
+                  title="Enviar recordatorio de atraso vía servidor api_wha"
                 >
                   <AlertTriangle className="w-3.5 h-3.5" />
                   {diasVencidos}D VENC.
-                </a>
+                </button>
               ) : (
                 <div className="w-full py-2 px-1 text-center font-extrabold text-[11px] rounded-xl bg-slate-800/80 border border-emerald-500/30 text-emerald-400 flex items-center justify-center leading-tight">
                   ✅ AL DÍA
@@ -316,20 +339,23 @@ export const ClientBottomSheet: React.FC<ClientBottomSheetProps> = ({
               </span>
             </div>
 
-            {/* 3. Days Overdue & WhatsApp */}
-            <a
-              href={linkWA_Dinamico}
-              target="_blank"
-              rel="noreferrer"
+            {/* 3. Days Overdue & WhatsApp via api_wha baliza */}
+            <button
+              onClick={() => {
+                const msg = obtenerMensajeWADinamico(cliente);
+                enviarApiWhaConBaliza(cliente, msg);
+                onShowToast(`💬 Mensaje enviado a ${datos.nombre} vía servidor api_wha`, 'success');
+              }}
               className={`w-full py-2 px-1 text-center font-extrabold text-[11px] rounded-xl flex items-center justify-center gap-1 leading-tight transition active:scale-95 ${
                 datos.sa > 30
-                  ? 'bg-gradient-to-r from-red-600/80 to-rose-700/80 text-white border border-red-500/50'
+                  ? 'bg-gradient-to-r from-red-600/80 to-rose-700/80 text-white border border-red-500/50 shadow-md'
                   : 'bg-slate-800 text-slate-200 border border-slate-700'
               }`}
+              title="Toca para enviar WhatsApp vía baliza api_wha"
             >
               <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
               <span>{datos.sa}D 💬</span>
-            </a>
+            </button>
           </div>
 
           {/* Account Details Box */}
@@ -362,19 +388,55 @@ export const ClientBottomSheet: React.FC<ClientBottomSheetProps> = ({
             </div>
           </div>
 
-          {/* Address Button */}
-          <button
-            onClick={() =>
-              window.open(
-                `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(datos.dirFinal)}`,
-                '_blank'
-              )
-            }
-            className="w-full p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-200 font-medium text-xs flex items-center justify-center gap-2 text-center transition"
-          >
-            <MapPin className="w-4 h-4 text-orange-400 shrink-0" />
-            <span className="truncate">{datos.dirFinal}</span>
-          </button>
+          {/* Address Box (Exact PABS Intranet Search function from original HTML + GPS) */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const rawUrlApp = (cliente['URL APP'] || cliente['urlApp'] || cliente['URL_APP']) as string | undefined;
+                const urlBuscar =
+                  rawUrlApp ||
+                  `https://webrigo.devlara.us.ci/buscar/?buscar=${encodeURIComponent(datos.nombre)}`;
+                onOpenWebVisor(urlBuscar, `BUSCAR PABS: ${datos.nombre}`);
+              }}
+              className="flex-1 p-2.5 rounded-xl bg-indigo-950/50 hover:bg-indigo-900/60 border border-indigo-500/40 text-slate-100 text-xs flex flex-col items-center justify-center text-center transition active:scale-95 shadow-sm group"
+              title="Toca para buscar este afiliado en el sistema PABS Web"
+            >
+              <div className="flex items-center gap-1.5 font-bold text-white group-hover:text-indigo-200 max-w-full">
+                <MapPin className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                <span className="truncate">{datos.dirFinal}</span>
+              </div>
+              <span className="text-[10px] text-indigo-300 font-medium mt-0.5 flex items-center gap-1">
+                🔍 Toca para buscar en PABS Web ({datos.nombre})
+              </span>
+            </button>
+
+            <button
+              onClick={() => {
+                const rawUrlApp = (cliente['URL APP'] || cliente['urlApp'] || cliente['URL_APP']) as string | undefined;
+                const urlBuscar =
+                  rawUrlApp ||
+                  `https://webrigo.devlara.us.ci/buscar/?buscar=${encodeURIComponent(datos.nombre)}`;
+                window.open(urlBuscar, '_blank');
+              }}
+              className="px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-indigo-300 font-bold text-[11px] flex items-center justify-center transition active:scale-95"
+              title="Abrir búsqueda en ventana nueva"
+            >
+              <ExternalLink className="w-4 h-4" />
+            </button>
+
+            <button
+              onClick={() =>
+                window.open(
+                  `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(datos.dirFinal)}`,
+                  '_blank'
+                )
+              }
+              className="px-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-emerald-400 font-black text-[10px] flex items-center justify-center transition active:scale-95"
+              title="Abrir en Google Maps GPS"
+            >
+              GPS
+            </button>
+          </div>
 
           {/* Follow-up & Pause row */}
           <div className="grid grid-cols-2 gap-2">
@@ -467,19 +529,35 @@ export const ClientBottomSheet: React.FC<ClientBottomSheetProps> = ({
               <Phone className="w-3.5 h-3.5" />
               LLAMAR
             </a>
-            <a
-              href={linkWA_ProntoPaso}
-              target="_blank"
-              rel="noreferrer"
+            <button
+              onClick={() => {
+                const msg = obtenerMensajeProntoPaso(datos.nombre);
+                enviarApiWhaConBaliza(cliente, msg);
+                onShowToast(`💬 Mensaje de Pronto Paso enviado a ${datos.nombre} vía api_wha`, 'success');
+              }}
               className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition"
+              title="Avisar que pasas en unos minutos vía api_wha"
             >
               <Clock className="w-3.5 h-3.5" />
               PRONTO PASO
-            </a>
+            </button>
           </div>
 
-          {/* PDF, JSON & Web Profile */}
-          <div className="grid grid-cols-3 gap-2">
+          {/* I, PDF, JSON & WhatsApp Row (From original HTML) */}
+          <div className="grid grid-cols-4 gap-1.5">
+            <button
+              onClick={() => {
+                const urlInci1 = (cliente['URL INCI1'] || cliente['URL INCI']) as string | undefined;
+                const targetUrl =
+                  urlInci1 ||
+                  `https://webrigo.devlara.us.ci/addinci.php?afil=${datos.idAfiliado}&dia=&m=0&come=`;
+                onOpenWebVisor(targetUrl, `INCIDENCIA: ${datos.nombre}`);
+              }}
+              className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition"
+              title="Abrir formulario de Incidencia (I)"
+            >
+              <span>ℹ️ I</span>
+            </button>
             <button
               onClick={() =>
                 onOpenWebVisor(
@@ -487,27 +565,30 @@ export const ClientBottomSheet: React.FC<ClientBottomSheetProps> = ({
                   `PDF ESTADO: ${datos.nombre}`
                 )
               }
-              className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1"
+              className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition"
             >
               <FileText className="w-3.5 h-3.5 text-rose-400" />
-              PDF
+              <span>PDF</span>
             </button>
             <button
               onClick={() => onViewJson(datos)}
-              className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1"
+              className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition"
             >
               <Code2 className="w-3.5 h-3.5 text-indigo-400" />
-              JSON
+              <span>JSON</span>
             </button>
-            <a
-              href={linkWA_Dinamico}
-              target="_blank"
-              rel="noreferrer"
-              className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1"
+            <button
+              onClick={() => {
+                const msg = obtenerMensajeWADinamico(cliente);
+                enviarApiWhaConBaliza(cliente, msg);
+                onShowToast(`💬 Mensaje enviado a ${datos.nombre} vía servidor api_wha`, 'success');
+              }}
+              className="py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-1 active:scale-95 transition"
+              title="Enviar WhatsApp de cobranza vía servidor api_wha"
             >
               <MessageCircle className="w-3.5 h-3.5 text-emerald-400" />
-              WHA
-            </a>
+              <span>WHA</span>
+            </button>
           </div>
 
           {/* "No Está" Management */}

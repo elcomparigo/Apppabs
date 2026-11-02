@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Search, Phone, MessageCircle, MapPin, DollarSign, RefreshCw, AlertCircle } from 'lucide-react';
 import { CuentaNuevaApi, Cliente } from '../types';
+import { enviarApiWhaPorNumero } from '../utils/pabsLogic';
 
 interface SemaforoNuevasModalProps {
   isOpen: boolean;
@@ -263,15 +264,22 @@ export const SemaforoNuevasModal: React.FC<SemaforoNuevasModalProps> = ({
                       <Phone className="w-3 h-3" />
                       Llamar
                     </a>
-                    <a
-                      href={linkWha}
-                      target="_blank"
-                      rel="noreferrer"
+                    <button
+                      onClick={() => {
+                        const msg = `¡Hola, ${fullName}! Le saluda Rodrigo Valencia de PABS. El motivo de mi mensaje es presentarme y ponerme a sus órdenes para cualquier duda o seguimiento con su plan previsor. ¡Excelente día!`;
+                        if (cleanTel) {
+                          enviarApiWhaPorNumero(cleanTel, msg);
+                          onShowToast(`💬 Mensaje enviado a ${fullName} vía api_wha`, 'success');
+                        } else {
+                          onShowToast('⚠️ Teléfono no válido para este registro', 'warning');
+                        }
+                      }}
                       className="py-2 text-center font-bold text-[11px] rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-1 shadow-sm transition active:scale-95"
+                      title="Enviar mensaje vía servidor api_wha"
                     >
                       <MessageCircle className="w-3 h-3" />
                       Wha
-                    </a>
+                    </button>
                     <button
                       onClick={() =>
                         window.open(

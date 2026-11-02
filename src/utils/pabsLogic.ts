@@ -472,43 +472,118 @@ export function obtenerColorSemaforoSA(sa: number, periodicidad: string): { colo
   return { color: '#ef4444', label: 'Crítico (+180d)', key: 'rojo' };
 }
 
-export function obtenerLinkWADinamico(c: Cliente): string {
+export function enviarApiWhaConBaliza(cliente: Cliente | null | undefined, mensajeTexto: string): boolean {
+  if (!cliente) return false;
+  const datos = mapearDatosCliente(cliente);
+  if (!datos) return false;
+  const rawTel = datos.telSolo || datos.tel || '';
+  const numero10Digitos = rawTel.replace(/\D/g, '').slice(-10);
+  if (!numero10Digitos || numero10Digitos.length < 10) return false;
+
+  const urlApiWha = `https://rigo.devlara.us.ci/apiwha.php?a=msg&numero=${numero10Digitos}&mensaje=${encodeURIComponent(mensajeTexto)}`;
+
+  // Baliza anti-CORS
+  try {
+    const imgWha = new Image();
+    imgWha.src = urlApiWha;
+  } catch (e) {
+    console.error('Error enviando baliza WHA:', e);
+  }
+
+  try {
+    fetch(urlApiWha, { method: 'GET', keepalive: true, mode: 'no-cors' }).catch(() => {});
+  } catch (e) {
+    // ignore
+  }
+
+  return true;
+}
+
+export function enviarApiWhaPorNumero(tel: string, mensajeTexto: string): boolean {
+  const numero10Digitos = tel.replace(/\D/g, '').slice(-10);
+  if (!numero10Digitos || numero10Digitos.length < 10) return false;
+
+  const urlApiWha = `https://rigo.devlara.us.ci/apiwha.php?a=msg&numero=${numero10Digitos}&mensaje=${encodeURIComponent(mensajeTexto)}`;
+
+  try {
+    const imgWha = new Image();
+    imgWha.src = urlApiWha;
+  } catch (e) {
+    console.error('Error enviando baliza WHA:', e);
+  }
+
+  try {
+    fetch(urlApiWha, { method: 'GET', keepalive: true, mode: 'no-cors' }).catch(() => {});
+  } catch (e) {
+    // ignore
+  }
+
+  return true;
+}
+
+export function obtenerMensajeWADinamico(c: Cliente): string {
   const datos = mapearDatosCliente(c);
   if (!datos) return '';
   const nombre = datos.nombre || 'CLIENTE';
   const sa = datos.sa || 0;
   const diaPago = datos.diaPago || 'acordado';
   const periodicidad = datos.periodicidad.toUpperCase();
-  const rawTel = datos.telSolo || datos.tel || '';
-  const numero10Digitos = rawTel.replace(/\D/g, '').slice(-10);
 
   let limiteDias = 7;
   if (periodicidad.includes('QUINCENAL')) limiteDias = 15;
   else if (periodicidad.includes('MENSUAL')) limiteDias = 31;
 
-  let mensaje = '';
   if (sa > 90) {
-    mensaje = `🚨 *AVISO DE ÚLTIMA HORA* 🚨\n\nEstimado/a *${nombre}*, le saluda Rodrigo Valencia de PABS.\n\nSu plan previsor presenta un atraso crítico de *${sa} días* sin aportación, superando el plazo contractual permitido. Su expediente está programado para revisión de suspensión.\n\nPara evitar la cancelación definitiva de sus beneficios y costos por penalización, es indispensable que nos responda hoy mismo para acordar una solución.\n\nQuedamos a la espera de su respuesta inmediata.`;
+    return `🚨 *AVISO DE ÚLTIMA HORA* 🚨\n\nEstimado/a *${nombre}*, le saluda Rodrigo Valencia de PABS.\n\nSu plan previsor presenta un atraso crítico de *${sa} días* sin aportación, superando el plazo contractual permitido. Su expediente está programado para revisión de suspensión.\n\nPara evitar la cancelación definitiva de sus beneficios y costos por penalización, es indispensable que nos responda hoy mismo para acordar una solución.\n\nQuedamos a la espera de su respuesta inmediata.`;
   } else if (sa > limiteDias) {
-    mensaje = `Hola *${nombre}*, le saludamos del área de cobranza de PABS. ⚠️ Notamos que su cuenta registra un atraso de *${sa} días* en sus aportaciones.\n\nLe recordamos que su fecha límite de pago es el *${diaPago}*. Mantener su plan al corriente le garantiza conservar todos sus beneficios sin contratiempos.\n\n¿Podríamos confirmar su pago para el día de hoy? Quedamos atentos para apoyarle.`;
+    return `Hola *${nombre}*, le saludamos del área de cobranza de PABS. ⚠️ Notamos que su cuenta registra un atraso de *${sa} días* en sus aportaciones.\n\nLe recordamos que su fecha límite de pago es el *${diaPago}*. Mantener su plan al corriente le garantiza conservar todos sus beneficios sin contratiempos.\n\n¿Podríamos confirmar su pago para el día de hoy? Quedamos atentos para apoyarle.`;
   } else {
-    mensaje = `Hola *${nombre}*, le saludamos con mucho gusto de PABS. 👋 Le recordamos que su fecha programada para su aportación es el *${diaPago}*.\n\nAgradecemos de antemano su puntualidad para mantener su plan previsor al día. ¡Que tenga un excelente día! Quedamos a sus órdenes.`;
+    return `Hola *${nombre}*, le saludamos con mucho gusto de PABS. 👋 Le recordamos que su fecha programada para su aportación es el *${diaPago}*.\n\nAgradecemos de antemano su puntualidad para mantener su plan previsor al día. ¡Que tenga un excelente día! Quedamos a sus órdenes.`;
   }
-
-  return `https://wa.me/521${numero10Digitos}?text=${encodeURIComponent(mensaje)}`;
 }
 
-export function obtenerLinkWA_PagoHoy(c: Cliente): string {
+export function obtenerLinkWADinamico(c: Cliente): string {
+  const datos = mapearDatosCliente(c);
+  if (!datos) return '';
+  const rawTel = datos.telSolo || datos.tel || '';
+  const numero10Digitos = rawTel.replace(/\D/g, '').slice(-10);
+  const mensaje = obtenerMensajeWADinamico(c);
+  return `https://rigo.devlara.us.ci/apiwha.php?a=msg&numero=${numero10Digitos}&mensaje=${encodeURIComponent(mensaje)}`;
+}
+
+export function obtenerMensajeWA_PagoHoy(c: Cliente): string {
   const datos = mapearDatosCliente(c);
   if (!datos) return '';
   const hoy = new Date();
   const dias = ['DOMINGO', 'LUNES', 'MARTES', 'MIERCOLES', 'JUEVES', 'VIERNES', 'SABADO'];
   const diaHoy = dias[hoy.getDay()];
-  const msg =
-    datos.diaPago === diaHoy
-      ? `Hola ${datos.nombre}, le contacto de PABS para recordarle que *hoy es su día de pago (${datos.diaPago})*. Quedamos a sus órdenes para recibir su aportación. ¡Saludos!`
-      : `Hola ${datos.nombre}, le contacto de PABS para recordarle que su día establecido de pago fue el *${datos.diaPago}*. Quedamos a sus órdenes para registrar su aportación pendiente a la brevedad. ¡Saludos!`;
-  return `https://wa.me/521${datos.telSolo}?text=${encodeURIComponent(msg)}`;
+  return datos.diaPago === diaHoy
+    ? `Hola ${datos.nombre}, le contacto de PABS para recordarle que *hoy es su día de pago (${datos.diaPago})*. Quedamos a sus órdenes para recibir su aportación. ¡Saludos!`
+    : `Hola ${datos.nombre}, le contacto de PABS para recordarle que su día establecido de pago fue el *${datos.diaPago}*. Quedamos a sus órdenes para registrar su aportación pendiente a la brevedad. ¡Saludos!`;
+}
+
+export function obtenerLinkWA_PagoHoyParaApi(c: Cliente): string {
+  const datos = mapearDatosCliente(c);
+  if (!datos) return '';
+  const rawTel = datos.telSolo || datos.tel || '';
+  const numero10Digitos = rawTel.replace(/\D/g, '').slice(-10);
+  const mensaje = obtenerMensajeWA_PagoHoy(c);
+  return `https://rigo.devlara.us.ci/apiwha.php?a=msg&numero=${numero10Digitos}&mensaje=${encodeURIComponent(mensaje)}`;
+}
+
+export const obtenerLinkWA_PagoHoy = obtenerLinkWA_PagoHoyParaApi;
+
+export function obtenerMensajeProntoPaso(nombre: string): string {
+  return `Hola ${nombre}, pasaremos en unos minutos a su domicilio por su aportacion al plan. De no encontrarse apoyeme indicandolo, Saludos.`;
+}
+
+export function obtenerLinkProntoPasoParaApi(c: Cliente): string {
+  const datos = mapearDatosCliente(c);
+  if (!datos) return '';
+  const rawTel = datos.telSolo || datos.tel || '';
+  const numero10Digitos = rawTel.replace(/\D/g, '').slice(-10);
+  const mensaje = obtenerMensajeProntoPaso(datos.nombre);
+  return `https://rigo.devlara.us.ci/apiwha.php?a=msg&numero=${numero10Digitos}&mensaje=${encodeURIComponent(mensaje)}`;
 }
 
 export function obtenerLinkNoEsta(c: Cliente): string {
@@ -516,7 +591,7 @@ export function obtenerLinkNoEsta(c: Cliente): string {
   if (!datos) return '';
   const hora = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
   const msg = `Hola *${datos.nombre}*, le saluda Rodrigo Valencia de PABS. Pasé a visitarle hoy a las *${hora}* para dar seguimiento a su plan pero lamentablemente no le encontré. 🏠\n\n¿Me regala una llamada o un mensaje cuando vea esto para coordinar su aportación y mantener su cuenta al corriente? Quedo a sus órdenes. ¡Saludos!`;
-  return `https://wa.me/521${datos.telSolo}?text=${encodeURIComponent(msg)}`;
+  return `https://rigo.devlara.us.ci/apiwha.php?a=msg&numero=${datos.telSolo}&mensaje=${encodeURIComponent(msg)}`;
 }
 
 export function formatearFechaConDia(fechaStr: string | undefined): string {

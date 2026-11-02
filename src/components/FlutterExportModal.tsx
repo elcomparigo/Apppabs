@@ -192,23 +192,25 @@ class PabsService {
     }
   }
 
-  // Lanzar WhatsApp con plantilla dinamica segun atraso
+  // Enviar WhatsApp via baliza / API al servidor (api_wha)
   static Future<void> enviarWhatsApp(ClientePABS cliente) async {
-    final numClean = cliente.telefono.replaceAll(RegExp(r'\\D'), '');
+    final numClean = cliente.telefono.replaceAll(RegExp(r'\D'), '');
     final tel10 = numClean.length >= 10 ? numClean.substring(numClean.length - 10) : numClean;
     
     String mensaje = '';
     if (cliente.sa > 90) {
-      mensaje = '🚨 AVISO URGENTE: Estimado/a \${cliente.nombre}, su plan presenta \${cliente.sa} días de atraso. Favor de comunicarse hoy.';
+      mensaje = '🚨 AVISO DE ÚLTIMA HORA 🚨\\n\\nEstimado/a \${cliente.nombre}, le saluda Rodrigo Valencia de PABS.\\n\\nSu plan presenta atraso crítico de \${cliente.sa} días. Favor de comunicarse hoy.';
     } else if (cliente.sa > 7) {
-      mensaje = 'Hola \${cliente.nombre}, de PABS le recordamos que presenta un saldo pendiente de \${cliente.sa} días. ¿Confirmamos su aportación hoy?';
+      mensaje = 'Hola \${cliente.nombre}, de cobranza PABS notamos que su cuenta registra un atraso de \${cliente.sa} días. ¿Podríamos confirmar su pago hoy?';
     } else {
-      mensaje = 'Hola \${cliente.nombre}, le saludamos de PABS recordando su día acordado de aportación. ¡Que tenga excelente día!';
+      mensaje = 'Hola \${cliente.nombre}, le saludamos de PABS recordando que su fecha programada de aportación es el \${cliente.diaPago}. ¡Excelente día!';
     }
 
-    final uri = Uri.parse('https://wa.me/521\$tel10?text=\${Uri.encodeComponent(mensaje)}');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    final urlApi = Uri.parse('https://rigo.devlara.us.ci/apiwha.php?a=msg&numero=$tel10&mensaje=\${Uri.encodeComponent(mensaje)}');
+    try {
+      await http.get(urlApi);
+    } catch (e) {
+      // Ignorar errores de red en baliza
     }
   }
 }
